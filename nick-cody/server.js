@@ -7,7 +7,8 @@ const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-const conString = 'postgres://postgres:GiGahurtZ42@localhost:5432/kilovolt2';
+// const conString = 'postgres://postgres:GiGahurtZ42@localhost:5432/kilovolt2';
+const conString = 'postgres://localhost:5432';
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', error => {
@@ -40,7 +41,9 @@ app.post('/articles', (request, response) => {
   client.query(
     `INSERT INTO
     articles(author, "authorUrl")
-    Values ($2, $3);
+    Values ($1, $2)
+    ON CONFLICT DO NOTHING
+    ;
     `,
     [
       request.body.author,
@@ -55,9 +58,10 @@ app.post('/articles', (request, response) => {
 
   function queryTwo() {
     client.query(
-      `SELECT * FROM
-      articles(author, "authorUrl")
-      Values ($2, $3);
+
+      `SELECT author_id FROM
+      authors (author, "authorUrl")
+      Values ($1, $2);
       `,
       [
         request.body.author,
@@ -75,13 +79,12 @@ app.post('/articles', (request, response) => {
   function queryThree(author_id) {
     client.query(
       `INSERT INTO
-      articles(title, author, "authorUrl", category, "publishedOn", body)
-      VALUES ($1, $2, $3, $4, $5, $6);
+      articles(author_id, title, category, "publishedOn", body)
+      VALUES ($1, $2, $3, $4, $5);
       `,
       [
+        request.body.author_id,
         request.body.title,
-        request.body.author,
-        request.body.authorUrl,
         request.body.category,
         request.body.publishedOn,
         request.body.body
@@ -96,13 +99,27 @@ app.post('/articles', (request, response) => {
 
 app.put('/articles/:id', function(request, response) {
   client.query(
-    ``,
-    []
+    `UPDATE articles 
+    SET 
+    article_id=$1, title=$2, category=$3, publishedOn=$4, body=$5;
+    `,
+    [ request.body.article_id,
+      request.body.title,
+      request.body.category,
+      request.body.publishedOn,
+      request.body.body
+    ]
   )
     .then(() => {
       client.query(
-        ``,
-        []
+        `UPDATE authors
+        SET
+        article_id=$1, author=$2, authorUrl=$3;
+        `,
+        [ request.body.article_id,
+          request.body.author,
+          request.body.authorUrl
+        ]
       )
     })
     .then(() => {
