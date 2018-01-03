@@ -4,11 +4,11 @@ const pg = require('pg');
 const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const app = express();
 
-// const conString = 'postgres://postgres:GiGahurtZ42@localhost:5432/kilovolt2';
-const conString = 'postgres://localhost:5432';
+const conString = 'postgres://postgres:GiGahurtZ42@localhost:5432/kilovolt2';
+// const conString = 'postgres://localhost:5432';
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', error => {
@@ -40,7 +40,7 @@ app.get('/articles', (request, response) => {
 app.post('/articles', (request, response) => {
   client.query(
     `INSERT INTO
-    articles(author, "authorUrl")
+    authors (author, "authorUrl")
     Values ($1, $2)
     ON CONFLICT DO NOTHING
     ;
@@ -58,14 +58,10 @@ app.post('/articles', (request, response) => {
 
   function queryTwo() {
     client.query(
-
       `SELECT author_id FROM
-      authors (author, "authorUrl")
-      Values ($1, $2);
-      `,
+      authors WHERE author = $1;`,
       [
         request.body.author,
-        request.body.authorUrl
       ],
       function(err, result) {
         if (err) console.error(err);
@@ -83,7 +79,7 @@ app.post('/articles', (request, response) => {
       VALUES ($1, $2, $3, $4, $5);
       `,
       [
-        request.body.author_id,
+        author_id,
         request.body.title,
         request.body.category,
         request.body.publishedOn,
@@ -99,8 +95,8 @@ app.post('/articles', (request, response) => {
 
 app.put('/articles/:id', function(request, response) {
   client.query(
-    `UPDATE articles 
-    SET 
+    `UPDATE articles
+    SET
     article_id=$1, title=$2, category=$3, publishedOn=$4, body=$5;
     `,
     [ request.body.article_id,
